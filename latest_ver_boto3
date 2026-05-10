@@ -1,0 +1,5 @@
+// To install the latest package of the boto3, run the following powershell command inside your vscode
+
+mkdir python
+pip install boto3 -t python/
+compress-archive -Path python -DestinationPath boto3_layer.zip
