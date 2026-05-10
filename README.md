@@ -3,5 +3,5 @@ This project demonstrates how to build an end-to-end serverless Generative AI ap
 
 # User-Interface
 
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/a60928b5-ea58-46f3-9b4b-e08242aa4aac" />
+<img width="1920" height="1024" alt="Screenshot (773)" src="https://github.com/user-attachments/assets/ac1951c4-1e7d-4261-b347-90dac6dfd1cf" />
 
