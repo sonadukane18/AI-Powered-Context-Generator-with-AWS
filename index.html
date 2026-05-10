@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GenAI Blog Generator with AWS</title>
+
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+
+    body {
+      margin: 0;
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      background: linear-gradient(-45deg, #1e1b4b, #4c1d95, #7c3aed, #2e1065);
+      background-size: 400% 400%;
+      animation: gradientAnimation 12s ease infinite;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: #1e293b;
+    }
+
+
+    @keyframes gradientAnimation {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+
+    .container {
+      width: 90%;
+      max-width: 900px;
+      background: #ffffff;
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 32px;
+      font-weight: 800;
+      color: #2e1065;
+      letter-spacing: -1px;
+    }
+
+
+    .input-box {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+
+    input {
+      flex: 1;
+      padding: 16px;
+      border-radius: 14px;
+      border: 2px solid #f1f5f9;
+      outline: none;
+      font-size: 16px;
+      background: #f8fafc;
+      transition: all 0.3s ease;
+    }
+
+
+    input:focus {
+      border-color: #a78bfa;
+      background: #ffffff;
+      box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.1);
+    }
+
+
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+
+    button {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 700;
+      color: white;
+      transition: all 0.25s ease;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+
+    /* 🎨 SMOOTH BLENDED GRADIENTS */
+
+
+    .btn-gen {
+      background: linear-gradient(135deg, #4f8cff, #2563eb, #1d4ed8);
+    }
+
+
+    .btn-copy {
+      background: linear-gradient(135deg, #fbbb19, #f59e0b, #d97706);
+    }
+
+
+    .btn-down {
+      background: linear-gradient(135deg, #20d190, #22c55e, #15803d);
+    }
+
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1.5px);
+      filter: brightness(1.05);
+    }
+
+
+    /* 📦 OUTPUT BOX FIXED BORDER (matches input style) */
+
+
+    .output-container {
+      margin-top: 10px;
+      padding: 25px;
+      background: #fdfdff;
+      border-radius: 18px;
+      max-height: 500px;
+      overflow-y: auto;
+      line-height: 1.8;
+
+
+      border: 2px solid #9608f6;
+
+
+      scroll-behavior: smooth;
+      transition: all 0.3s ease;
+    }
+
+
+    .output-container:focus-within {
+      border-color: #9722ea;
+      box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.08);
+    }
+
+
+    #output {
+      outline: none;
+      min-height: 250px;
+      color: #334155;
+    }
+
+
+    #output img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 16px;
+      margin: 20px 0;
+      display: block;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+    }
+
+
+    .output-container::-webkit-scrollbar {
+      width: 6px;
+    }
+
+
+    .output-container::-webkit-scrollbar-thumb {
+      background: #ddd6fe;
+      border-radius: 10px;
+    }
+
+
+  </style>
+</head>
+
+
+<body>
+
+
+  <div class="container">
+    <h1>AI Blog Generator with AWS</h1>
+
+
+    <div class="input-box">
+      <input type="text" id="topic" placeholder="Enter blog topic..." />
+    </div>
+
+
+    <div class="btn-group">
+      <button id="genBtn" class="btn-gen" onclick="generateBlog()">Generate Blog</button>
+      <button class="btn-copy" onclick="copyBlog()">Copy Text</button>
+      <button class="btn-down" onclick="downloadBlog()">Download.md</button>
+    </div>
+
+
+    <div class="output-container" id="scrollArea">
+      <div id="output"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "https://2oywxlb309.execute-api.us-east-2.amazonaws.com/dev/blogGenAPI";
+    const API_URL = {YOUR_API_GATEWAY_INVOKE_URL_HERE}
+
+    marked.setOptions({ breaks: true, gfm: true });
+
+    async function generateBlog() {
+      const topicInput = document.getElementById("topic");
+      const genBtn = document.getElementById("genBtn");
+      const output = document.getElementById("output");
+      const topic = topicInput.value;
+
+
+      if (!topic.trim()) {
+        alert("Please enter a topic!");
+        return;
+      }
+
+      output.innerHTML = "<p style='color:#a78bfa'>Calling AI Model to craft your masterpiece... ✨</p>";
+      genBtn.disabled = true;
+      genBtn.innerText = "Generating...";
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ blog_topic: topic })
+        });
+
+
+        const data = await response.json();
+        typeWriter(data.blog || "No content returned.");
+
+
+      } catch (err) {
+        output.innerHTML = "<p style='color:#ef4444;'>Connection error. ❌</p>";
+      } finally {
+        genBtn.disabled = false;
+        genBtn.innerText = "Generate Blog";
+      }
+    }
+
+    function typeWriter(text) {
+      let i = 0;
+      let buffer = "";
+      const output = document.getElementById("output");
+      const scrollArea = document.getElementById("scrollArea");
+
+      output.innerHTML = "";
+
+      function typing() {
+        if (i < text.length) {
+          buffer += text.charAt(i);
+
+          // FIXED CLEAN SPACING
+          let cleanText = buffer
+            .replace(/\n{3,}/g, "\n\n")
+            .replace(/\r\n/g, "\n")
+            .replace(/[ \t]+$/gm, "");
+
+          output.innerHTML = marked.parse(cleanText);
+
+          scrollArea.scrollTop = scrollArea.scrollHeight;
+          i++;
+          setTimeout(typing, 8);
+        } else {
+          output.contentEditable = "true";
+        }
+      }
+
+      typing();
+    }
+
+    function copyBlog() {
+      const text = document.getElementById("output").innerText;
+      navigator.clipboard.writeText(text).then(() => alert("Copied to clipboard!"));
+    }
+
+    function downloadBlog() {
+      const text = document.getElementById("output").innerText;
+      const blob = new Blob([text], { type: "text/markdown" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `blog-${Date.now()}.md`;
+      link.click();
+    }
+  </script>
+
+</body>
+</html>
+
